@@ -1,0 +1,8 @@
+expect sum ok, jump
+expect FreeRTOS on to2610-kvc
+expect rtos got 1
+expect rtos got 2
+expect rtos got 3
+expect rtos got 4
+expect rtos got 5
+expect rtos done

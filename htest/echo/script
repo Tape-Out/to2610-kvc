@@ -1,0 +1,5 @@
+expect to2610 boot
+expect sum ok, jump
+expect payload up
+send ping
+expect ping

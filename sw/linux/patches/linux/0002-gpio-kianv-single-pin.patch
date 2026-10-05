@@ -1,0 +1,81 @@
+gpio: kianv: drive the single pin of the taped-out SoC
+
+The driver was written for the FPGA SoC, one register bit per line. The
+ASIC has one pin whose direction and level are written at bit 9 and read
+back at bit 0, so line 0 never became an output and line 9 never read the
+pad.
+
+--- a/drivers/gpio/gpio-kianv.c
++++ b/drivers/gpio/gpio-kianv.c
+@@ -29,34 +29,21 @@
+ 
+ #define GPIO_DIR_OFFSET 0x00
+ #define GPIO_INPUT_OFFSET 0x08
+-#define GPIO_MAX_PINS 8
+ #define GPIO_OUTPUT_OFFSET 0x04
++/* One pin: direction and level are written at bit 9 and read back at bit 0. */
++#define GPIO_WR BIT(9)
+ 
+ static int kianv_gpio_get(struct gpio_chip *gc, unsigned int offset)
+ {
+ 	struct kianv_gpio *kv = gpiochip_get_data(gc);
+-	return readl(kv->base + GPIO_INPUT_OFFSET) & (1 << offset);
++	return readl(kv->base + GPIO_INPUT_OFFSET) & 1;
+ }
+ 
+ static int kianv_gpio_set(struct gpio_chip *gc, unsigned int offset, int value)
+ {
+ 	struct kianv_gpio *kv = gpiochip_get_data(gc);
+-	u32 mask = BIT(offset);
+-	u32 reg_val;
+-
+-	/* Optional: sanity check offset */
+-	if (offset >= GPIO_MAX_PINS)
+-		return -EINVAL;
+-
+-	reg_val = readl(kv->base + GPIO_OUTPUT_OFFSET);
+-
+-	if (value)
+-		reg_val |= mask;
+-	else
+-		reg_val &= ~mask;
+-
+-	writel(reg_val, kv->base + GPIO_OUTPUT_OFFSET);
+ 
++	writel(value ? GPIO_WR : 0, kv->base + GPIO_OUTPUT_OFFSET);
+ 	return 0;
+ }
+ 
+@@ -64,19 +51,17 @@
+ 			      int value)
+ {
+ 	struct kianv_gpio *kv = gpiochip_get_data(gc);
+-	u32 reg_val = readl(kv->base + GPIO_DIR_OFFSET);
+-	reg_val |= (1 << offset);
+-	writel(reg_val, kv->base + GPIO_DIR_OFFSET);
++
+ 	kianv_gpio_set(gc, offset, value);
++	writel(GPIO_WR, kv->base + GPIO_DIR_OFFSET);
+ 	return 0;
+ }
+ 
+ static int kianv_gpio_dir_in(struct gpio_chip *gc, unsigned int offset)
+ {
+ 	struct kianv_gpio *kv = gpiochip_get_data(gc);
+-	u32 reg_val = readl(kv->base + GPIO_DIR_OFFSET);
+-	reg_val &= ~(1 << offset);
+-	writel(reg_val, kv->base + GPIO_DIR_OFFSET);
++
++	writel(0, kv->base + GPIO_DIR_OFFSET);
+ 	return 0;
+ }
+ 
+@@ -87,7 +72,7 @@
+ 	.direction_output = kianv_gpio_dir_out,
+ 	.direction_input = kianv_gpio_dir_in,
+ 	.base = -1, // dynamically assigned
+-	.ngpio = 32, // assuming 32 GPIOs; adjust as necessary
++	.ngpio = 1,
+ 	.owner = THIS_MODULE,
+ };
+ 

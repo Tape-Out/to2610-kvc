@@ -1,0 +1,12 @@
+#!/bin/sh
+hostname "$(cat /etc/hostname)"
+ifconfig lo 127.0.0.1
+# 网卡模块没插就没有 eth0；插了就在后台要地址，不挡启动
+[ -e /sys/class/net/eth0 ] && udhcpc -b -i eth0 > /dev/null 2>&1
+# SD 卡插着就把第一个分区挂到 /mnt/sd（FAT 或 ext2），上面有 boot.sh 就跑它：上电自动配网、
+# 配路由器这一类写在卡上，换实验不必重烧 Flash。放后台，不挡 shell；没认到卡 sdcard 会把驱动摘下来
+(
+  SDCARD_WAIT=3 sdcard > /dev/null 2>&1 || exit 0
+  [ -f /mnt/sd/boot.sh ] && sh /mnt/sd/boot.sh
+) > /dev/console 2>&1 &
+echo "to2610-kvc up"

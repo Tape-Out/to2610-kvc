@@ -1,0 +1,11 @@
+expect OpenSBI
+expect Linux version
+expect Run /init
+expect  up
+expect ~ #
+send echo sum=$((6*7))\n
+expect sum=42
+send uname -m\n
+expect riscv32
+send echo feat=$(ls /sys/bus/spi/drivers | grep -c spidev)$(grep -c vfat /proc/filesystems)$(spix 2>&1 | grep -c usage)$(sdcard 2>&1 | grep -c sdcard)\n
+expect feat=1111

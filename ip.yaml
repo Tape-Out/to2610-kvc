@@ -1,0 +1,37 @@
+name: to2610-kvc
+version: 0.1.0
+spec: '0.1'
+identity:
+  slug: to2610-kvc
+  display_name: Linux single-core chip
+  category: soc
+  maturity: simulated
+  summary: 'A single-core Linux chip for the ECOS 2610 shuttle: the KianV RV32IMA Sv32 SoC with
+    a UART, an SD card port, a network SPI port and an SDRAM port, booting from an external SPI flash.'
+contract:
+  version: 1
+  ctrl:
+    shape: none
+    aw: 32
+    dw: 32
+deps:
+  gf180mcu-kianv-rv32ima-sv32: ^0.1
+asic:
+  core: gf180mcu-kianv-rv32ima-sv32
+  top: to2610_kvc
+  frame: mpc
+  # 核的 systemClk 旋钮默认也是 50 MHz：SDRAM 的时序拍数与软件读到的主频都按它算，板上的时钟要等于它
+  mhz: 50
+  flow: syn_sta
+  # 上游把全部引脚并成一条 54 位总线，位次照它的 chip_core.sv，原样占 payload 的 0 到 53 位
+  pads:
+  - { in: bidir_in, out: bidir_out, oe: bidir_oe }
+  unused: [bidir_cs, bidir_sl, bidir_ie, bidir_pu, bidir_pd]
+tasks:
+  chip:
+    desc: 出流片的 .v，测试台带片外的 SDRAM、Flash 与串口，在它上面跑裸机冒烟、引导程序与 Linux
+    run: bash htest/chip.sh {{out}} {{dep.gf180mcu-kianv-rv32ima-sv32}}
+    timeout: 21000
+test:
+  upstream:
+  - { name: chip, task: chip, timeout: 21000 }

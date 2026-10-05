@@ -1,0 +1,31 @@
+#!/bin/sh
+# SD 卡座没有插拔检测脚：驱动挂着而卡不在时，内核每秒把整套上电与识别走一遍，白占这颗核的时间。
+# 所以开机没认到卡就把驱动摘下来（rcS 调 sdcard off）；之后才插卡的跑一次 sdcard，认到就把第一个分区
+# 只读挂到 /mnt/sd。拔卡之前跑 sdcard off。
+drv=/sys/bus/spi/drivers/mmc_spi
+for d in /sys/bus/spi/devices/*; do
+  case "$(readlink "$d/of_node")" in */mmc-slot@*) n=$(basename "$d") ;; esac
+done
+[ -n "$n" ] || { echo "sdcard: 设备树里没有卡座"; exit 1; }
+case "$1" in
+  off)
+    umount /mnt/sd 2> /dev/null
+    [ ! -e "$drv/$n" ] || echo "$n" > "$drv/unbind"
+    exit 0 ;;
+  "" | on) ;;
+  *) echo "usage: sdcard [on|off]"; exit 2 ;;
+esac
+[ -e "$drv/$n" ] || echo "$n" > "$drv/bind"
+i=0
+while [ ! -b /dev/mmcblk0p1 ] && [ $i -lt "${SDCARD_WAIT:-8}" ]; do
+  sleep 1
+  i=$((i + 1))
+done
+if [ ! -b /dev/mmcblk0p1 ]; then
+  echo "$n" > "$drv/unbind"
+  echo "sdcard: 没认到卡"
+  exit 1
+fi
+mkdir -p /mnt/sd
+grep -q ' /mnt/sd ' /proc/mounts || mount -o ro /dev/mmcblk0p1 /mnt/sd || exit 1
+echo /mnt/sd

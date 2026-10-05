@@ -1,0 +1,32 @@
+expect OpenSBI
+expect Linux version
+expect to2610-kvc up
+expect ~ #
+save build/linux.ckpt
+send echo sum=$((6*7))\n
+expect sum=42
+send uname -m\n
+expect riscv32
+send sed -n '/^mmu/s/.*: //p' /proc/cpuinfo | tr a-z A-Z\n
+expect SV32
+send echo hello > /tmp/f; md5sum /tmp/f\n
+expect b1946ac92492d2347c6235b4d2611184
+send head -n 1 /proc/meminfo\n
+expect MemTotal
+send seq 100 | awk '{s+=$1} END {print "awk=" s}'\n
+expect awk=5050
+send dd if=/dev/zero bs=1k count=64 2>/dev/null | md5sum\n
+expect fcd6bcb56c1689fcef28b57c22475bad
+send sleep 1; echo irq=$(grep -c timer /proc/interrupts)\n
+expect irq=1
+send ping -c 1 127.0.0.1 > /dev/null && echo ping=$((1+1))\n
+expect ping=2
+send echo sd=$(ls /sys/bus/spi/drivers/mmc_spi | grep -c spi)$(dmesg | grep -c 'mode bits')\n
+expect sd=00
+send g=$(ls /sys/class/gpio | sed -n s/gpiochip//p); cd /sys/class/gpio; echo $g > export; cd gpio$g\n
+send echo out > direction; echo 1 > value; echo pin=$(cat value)$((1+1))\n
+expect pin=12
+send echo 0 > value; echo pin=$(cat value)$((2+1))\n
+expect pin=03
+send reboot\n
+expect to2610 boot

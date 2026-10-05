@@ -1,0 +1,17 @@
+spi: kianv: accept SPI_CS_HIGH
+
+set_cs() already drives the level it is given, so the core can invert it.
+mmc_spi needs this to clock a card with the chip select high at power-up;
+without it every card detect poll logs an error and a warning.
+
+--- a/drivers/spi/spi-kianV-simple.c
++++ b/drivers/spi/spi-kianV-simple.c
+@@ -146,7 +146,7 @@
+ 
+ 	master->dev.of_node = pdev->dev.of_node;
+ 	master->bus_num = pdev->id;
+-	master->mode_bits = SPI_MODE_0;
++	master->mode_bits = SPI_MODE_0 | SPI_CS_HIGH;
+ 	master->bits_per_word_mask = SPI_BPW_MASK(8);
+ 	master->set_cs = kianVspi_set_cs;
+ 	master->transfer_one = kianVspi_transfer_one;

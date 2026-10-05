@@ -1,0 +1,21 @@
+#!/bin/sh
+# SPI1 那一路交给谁：net 是网卡驱动（接 W5500 模块上网），dev 是 spidev（用 spix 去管别的芯片的 SPI 管理口）。
+# 同一份镜像两种用法，换接线之后切一下，不必重烧。
+case "$1" in
+  net) drv=w5100 ;;
+  dev) drv=spidev ;;
+  *) echo "usage: spimode net|dev"; exit 2 ;;
+esac
+for d in /sys/bus/spi/devices/*; do
+  case "$(readlink "$d/of_node")" in */spi@10500100/*) dev=$d ;; esac
+done
+[ -n "$dev" ] || { echo "spimode: SPI1 上没有设备"; exit 1; }
+n=$(basename "$dev")
+[ -e "$dev/driver" ] && echo "$n" > "$dev/driver/unbind"
+echo "$drv" > "$dev/driver_override"
+echo "$n" > /sys/bus/spi/drivers_probe
+if [ "$1" = dev ]; then
+  echo "/dev/spidev${n#spi}"
+else
+  [ -e "$dev/driver" ] && echo "eth0" || echo "spimode: 网卡没认出来，模块接好了吗"
+fi

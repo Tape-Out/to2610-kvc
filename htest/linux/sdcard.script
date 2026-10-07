@@ -1,0 +1,15 @@
+reject Kernel panic
+send echo go=$((6*7))\n
+expect go=42
+send sdcard; echo sd=$?\n
+expect sd=0
+send cat /mnt/sd/hello.txt\n
+expect hello from the card
+send md5sum < /mnt/sd/blob.bin\n
+expect @MD5@
+send mount -o remount,rw /mnt/sd && echo written-by-to2610 > /mnt/sd/out.txt && sync; echo wr=$?\n
+expect wr=0
+send umount /mnt/sd; sdcard; cat /mnt/sd/out.txt\n
+expect written-by-to2610
+send sdcard off; echo off=$?\n
+expect off=0

@@ -1,0 +1,19 @@
+reject Kernel panic
+send echo go=$((6*7))\n
+expect go=42
+send sdcard; echo sd=$?\n
+expect sd=0
+send spimode gpu\n
+expect /dev/tgpu
+send tgpu info\n
+expect 4 cores, 4 threads a block
+send tgpu run /mnt/sd/shade.tgk > /tmp/drv && cmp /tmp/drv /mnt/sd/want8 && echo drv=$((8*8))\n
+expect drv=64
+send tgpu run /mnt/sd/mlp.tgk > /tmp/mlp && cmp /tmp/mlp /mnt/sd/mlp8 && echo mlp=$((9*9))\n
+expect mlp=81
+send tgpu video 64 8x8 && tgpu video 0 16x16 rgb && echo vid=$((7*11))\n
+expect vid=77
+reject differ
+reject No such file
+reject Invalid argument
+reject timed out

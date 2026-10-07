@@ -1,0 +1,17 @@
+reject Kernel panic
+send echo go=$((6*7))\n
+expect go=42
+send sdcard; echo sd=$?\n
+expect sd=0
+send d=$(spimode dev); echo dev=$d\n
+expect dev=/dev/spidev
+send spix $d 2000000 < /mnt/sd/load > /dev/null; echo load=$((1+1))\n
+expect load=2
+send until spix $d 2000000 < /mnt/sd/done | grep -q '01$'; do :; done; echo done=$((3+4))\n
+expect done=7
+send spix $d 2000000 < /mnt/sd/mem | cut -c15- > /tmp/got && cmp /tmp/got /mnt/sd/want && echo gpu=$((40+2))\n
+expect gpu=42
+send spix $d 2000000 < /mnt/sd/video > /dev/null && spix $d 2000000 < /mnt/sd/vrd | cut -c15- > /tmp/v && cmp /tmp/v /mnt/sd/vwant && echo video=$((5+5))\n
+expect video=10
+reject differ
+reject No such file

@@ -1,0 +1,15 @@
+reject Kernel panic
+send echo go=$((6*7))\n
+expect go=42
+send spimode net\n
+expect eth0
+send ip link set eth0 address 02:00:00:00:00:21 && ip link set eth0 up && echo up=$((1+1))\n
+expect up=2
+send cat /sys/class/net/eth0/address\n
+expect 02:00:00:00:00:21
+send udhcpc -i eth0 -n -q -t 5\n
+expect lease of 10.0.0.2 obtained
+send ip -4 addr show eth0 | grep -o 'inet [0-9./]*'\n
+expect inet 10.0.0.2/24
+send ping -c 3 10.0.0.1\n
+expect 3 packets received

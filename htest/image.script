@@ -9,3 +9,7 @@ send uname -m\n
 expect riscv32
 send echo feat=$(ls /sys/bus/spi/drivers | grep -c spidev)$(grep -c vfat /proc/filesystems)$(spix 2>&1 | grep -c usage)$(sdcard 2>&1 | grep -c sdcard)\n
 expect feat=1111
+send spimode\n
+expect usage: spimode net|dev|gpu
+send apptest\n
+expect apptest all=10 ok=10

@@ -16,6 +16,8 @@ contract:
     dw: 32
 deps:
   gf180mcu-kianv-rv32ima-sv32: ^0.1
+  to2610-router: ^0.1
+  to2610-gpu: ^0.1
 asic:
   core: gf180mcu-kianv-rv32ima-sv32
   top: to2610_kvc
@@ -32,6 +34,26 @@ tasks:
     desc: 出流片的 .v，测试台带片外的 SDRAM、Flash 与串口，在它上面跑裸机冒烟、引导程序与 Linux
     run: bash htest/chip.sh {{out}} {{dep.gf180mcu-kianv-rv32ima-sv32}}
     timeout: 21000
+  linux-sdcard:
+    desc: 从整片测试 linux 段存下的断点起：SPI0 上插 SD 卡，读写、重挂、取出芯片写的文件核对
+    run: env LAYERS=sdcard bash htest/linux-layers.sh {{out}} {{dep.gf180mcu-kianv-rv32ima-sv32}} {{dep.to2610-router}} {{dep.to2610-gpu}}
+    timeout: 18000
+  linux-network:
+    desc: 同一个断点起：SPI1 上接 W5500，改 MAC、udhcpc 拿地址、ping 测试台里的主机
+    run: env LAYERS=network bash htest/linux-layers.sh {{out}} {{dep.gf180mcu-kianv-rv32ima-sv32}} {{dep.to2610-router}} {{dep.to2610-gpu}}
+    timeout: 18000
+  linux-netjoin:
+    desc: 同一个断点起：网线接上 switch 与 router 的联合仿真，同网段与跨网段 ping
+    run: env LAYERS=netjoin bash htest/linux-layers.sh {{out}} {{dep.gf180mcu-kianv-rv32ima-sv32}} {{dep.to2610-router}} {{dep.to2610-gpu}}
+    timeout: 18000
+  linux-netinet:
+    desc: 同一个断点起：联合仿真里的 B0 换成宿主机，过路由器 ping、TCP 取文件、经 NAT 查 DNS 与取外网的页面
+    run: env LAYERS=netinet bash htest/linux-layers.sh {{out}} {{dep.gf180mcu-kianv-rv32ima-sv32}} {{dep.to2610-router}} {{dep.to2610-gpu}}
+    timeout: 18000
+  linux-gpu:
+    desc: 从同一个断点起，SPI1 上接一整颗 to2610-gpu：经 spidev 重放收发、经内核驱动跑渲染与推理
+    run: env LAYERS=gpu bash htest/linux-layers.sh {{out}} {{dep.gf180mcu-kianv-rv32ima-sv32}} {{dep.to2610-router}} {{dep.to2610-gpu}}
+    timeout: 18000
 test:
   upstream:
   - { name: chip, task: chip, timeout: 21000 }

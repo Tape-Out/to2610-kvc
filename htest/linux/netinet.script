@@ -1,0 +1,18 @@
+reject Kernel panic
+send echo go=$((6*7))\n
+expect go=42
+send spimode net\n
+expect eth0
+send ip link set eth0 address 02:00:00:00:00:20 && ip addr add 10.0.0.20/24 dev eth0 && ip link set eth0 mtu 114 up && ip route add default via 10.0.0.1 && echo up=$((1+1))\n
+expect up=2
+send ping -c 2 10.0.1.10\n
+expect 2 packets received
+send wget -q -O /tmp/blob http://10.0.1.10:8080/blob && md5sum /tmp/blob\n
+expect @MD5@
+send nslookup example.com 8.8.8.8 | grep -A1 '^Name:' | grep -q Address && echo dns=$((5*5))\n
+expect dns=25
+send echo nameserver 8.8.8.8 > /etc/resolv.conf && wget -q -O - http://example.com/ | grep -q 'Example Domain' && echo web=$((60+3))\n
+expect web=63
+reject bad address
+reject server returned error
+reject can't connect

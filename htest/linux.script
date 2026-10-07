@@ -2,7 +2,7 @@ expect OpenSBI
 expect Linux version
 expect to2610-kvc up
 expect ~ #
-save build/linux.ckpt
+save build/ckpt/linux.ckpt
 send echo sum=$((6*7))\n
 expect sum=42
 send uname -m\n
@@ -28,5 +28,8 @@ send echo out > direction; echo 1 > value; echo pin=$(cat value)$((1+1))\n
 expect pin=12
 send echo 0 > value; echo pin=$(cat value)$((2+1))\n
 expect pin=03
+reject apptest failed
+send cd /; apptest\n
+expect apptest all=10 ok=10
 send reboot\n
 expect to2610 boot

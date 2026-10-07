@@ -68,10 +68,10 @@ if [ -d "$B/output/target" ]; then
   find "$B/output/build" -maxdepth 2 -name .stamp_target_installed -delete
   rm -f "$B"/output/build/host-gcc-final-*/.stamp_host_installed
 fi
-if [ -n "${TO2610_KHOOK:-}" ]; then
-  make -C "$B" linux-patch
-  bash "$TO2610_KHOOK" "$B"/output/build/linux-[0-9]*/
-fi
+make -C "$B" linux-patch
+for k in "$H/khook.sh" ${TO2610_KHOOK:+"$TO2610_KHOOK"}; do
+  bash "$k" "$B"/output/build/linux-[0-9]*/
+done
 make -C "$B"
 # 根文件系统打完包，buildroot 才把内核重编一遍嵌进去；OpenSBI 的载荷在那之前就拼好了，里面的内核带的是
 # 上一次的根文件系统，头一次是空的。所以载荷再拼一遍，并核对它里面就是最后那份内核（RV32 的载荷在 4 MiB 处）

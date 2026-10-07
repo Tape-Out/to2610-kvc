@@ -1,11 +1,17 @@
 #!/bin/sh
-# SPI1 那一路交给谁：net 是网卡驱动（接 W5500 模块上网），dev 是 spidev（用 spix 去管别的芯片的 SPI 管理口）。
+# SPI1 那一路交给谁：net 是网卡驱动（接 W5500 模块上网），dev 是 spidev（用 spix 去管别的芯片的 SPI 管理口），
+# gpu 是 to2610-gpu 的驱动（/dev/tgpu，用 tgpu 装载、起跑、读回）。
 # 同一份镜像两种用法，换接线之后切一下，不必重烧。
+# SPI1 的分频在 0x1000_0010 的高 16 位（低 16 位是 mtime 的，原样留着）。复位后是 0，SCK 是主频的一半：W5500 收得了，
+# 别的芯片的管理口要不超过它主频的八分之一，所以 dev、gpu 两种用法设成 5，SCK 是主频的十分之一
 case "$1" in
-  net) drv=w5100 ;;
-  dev) drv=spidev ;;
-  *) echo "usage: spimode net|dev"; exit 2 ;;
+  net) drv=w5100 div=0 ;;
+  dev) drv=spidev div=5 ;;
+  gpu) drv=to2610-gpu div=5 ;;
+  *) echo "usage: spimode net|dev|gpu"; exit 2 ;;
 esac
+v=$(devmem 0x10000010 32)
+devmem 0x10000010 32 $(( (div << 16) | (v & 0xffff) ))
 for d in /sys/bus/spi/devices/*; do
   case "$(readlink "$d/of_node")" in */spi@10500100/*) dev=$d ;; esac
 done
@@ -16,6 +22,8 @@ echo "$drv" > "$dev/driver_override"
 echo "$n" > /sys/bus/spi/drivers_probe
 if [ "$1" = dev ]; then
   echo "/dev/spidev${n#spi}"
+elif [ "$1" = gpu ]; then
+  [ -e /dev/tgpu ] && echo /dev/tgpu || echo "spimode: 没认出 to2610-gpu，管理口接好了吗"
 else
   [ -e "$dev/driver" ] && echo "eth0" || echo "spimode: 网卡没认出来，模块接好了吗"
 fi

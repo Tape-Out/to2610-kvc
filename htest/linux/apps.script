@@ -1,0 +1,6 @@
+reject Kernel panic
+reject apptest failed
+send echo go=$((6*7))\n
+expect go=42
+send cd /; apptest\n
+expect apptest all=10 ok=10

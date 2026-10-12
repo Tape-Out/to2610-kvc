@@ -7,13 +7,14 @@
 #            照 future-work/04 的 L4 一字不差：定 MAC、配地址与 MTU、加路由，ping 同网段的 A0 与另一网段的 B0
 #   netinet  同上，但 B0 换成宿主机的 TAP 网卡（真的 TCP/IP，上面跑 HTTP 服务与只答 lab.test 的 DNS，都只听这块网卡，
 #            测试一个包也不出本机）：ping 宿主机、TCP 取一个文件核 md5、向宿主机查 lab.test、按名字取页面。要 sudo
+#   apps     apptest 的十项：进程、管道、信号、共享映射、线程与原子操作、文件、软浮点、计时、本地套接字、exec
 #   gpujoin  SPI1 上接一整颗 to2610-gpu，照 future-work/07 的 G7：主机侧用它的 gpu.py 把装载、起跑、查状态、读回、
 #            开视频录成 SPI 收发放在卡上，Linux 里 spimode dev 之后用 spix 重放；读回的数据存储与软件模型逐字节比
 #   gpudrv   同一颗 gpu 走内核驱动：spimode gpu 绑上 to2610-gpu 驱动，tgpu 装载 gpu.py build 出的 .tgk，渲染（shade）与
 #            推理（mlp）各跑一遍、读回与软件模型逐字节比，再经驱动设两种视频格式
 # 断点、编好的仿真器与 Flash 镜像在 build/ckpt（整片测试留下的，流水线上由前一个作业交过来）；CKPT 给了就用那里的
 # （to2610-soc 的接力留在它的 build/linux-run）。
-# LAYERS 给要跑的段名，空格分隔；net 是前四段、gpu 是后两段，不给就六段全跑。流水线上分几个作业同时跑，一个作业放不下。
+# LAYERS 给要跑的段名，空格分隔；net 是前四段、gpu 是后两段，不给就七段全跑。流水线上分几个作业同时跑，一个作业放不下。
 # LAYER_MAX 是每段最多跑几拍，不给是六十亿；仿真慢的那一颗要调小，卡住时才来得及在任务时限之前报出卡在哪一句。
 # 用法：linux-layers.sh <输出目录> <黑盒仓> [<to2610-router 仓> [<to2610-gpu 仓>]]（联合仿真的两段要 router，gpu 两段要 gpu）
 set -euo pipefail
@@ -82,7 +83,7 @@ python3 "$K/htest/sdimg.py" "$O/sd.img" "$O/hello.txt" "$O/blob.bin"
 md5=$(md5sum < "$O/blob.bin" | cut -c1-32)
 sed "s/@MD5@/$md5/" htest/linux/sdcard.script > "$O/sdcard.script"
 case "${LAYERS:-all}" in
-  all) pick=" sdcard network netjoin netinet gpujoin gpudrv " ;;
+  all) pick=" sdcard network netjoin netinet apps gpujoin gpudrv " ;;
   net) pick=" sdcard network netjoin netinet " ;;
   gpu) pick=" gpujoin gpudrv " ;;
   *) pick=" $LAYERS " ;;
@@ -111,6 +112,9 @@ sed "s/@MD5@/$md5/" htest/linux/netinet.script > "$O/netinet.script"
 join netinet "B0 换成宿主机：过路由器 ping 它、TCP 取 8 KiB 核 md5、向它查 lab.test、按名字取页面，都不出本机" \
   "$O/netinet.script" NET_TAP=xr0 NET_WWW="$O/www"
 fi
+
+want apps && { run apps "apptest 的十项：fork 与退出码、管道、信号、共享映射、线程与原子加、文件、软浮点、计时、本地套接字、exec" \
+  +script=htest/linux/apps.script || true; }
 
 if want gpujoin || want gpudrv; then
 # gpu：收发录在一张卡上，只有 spix 读回来的数据部分（读传输的第 7 个字节起）拿来比

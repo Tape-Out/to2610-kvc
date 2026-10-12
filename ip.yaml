@@ -50,6 +50,10 @@ tasks:
     desc: 同一个断点起：联合仿真里的 B0 换成宿主机，过路由器 ping、TCP 取文件、向它查 lab.test、按名字取页面，测试不出托管机
     run: env LAYERS=netinet bash htest/linux-layers.sh {{out}} {{dep.gf180mcu-kianv-rv32ima-sv32}} {{dep.to2610-router}} {{dep.to2610-gpu}}
     timeout: 18000
+  linux-apps:
+    desc: 同一个断点起：apptest 的十项应用测试（进程、管道、信号、共享映射、线程与原子操作、文件、软浮点、计时、本地套接字、exec）
+    run: env LAYERS=apps bash htest/linux-layers.sh {{out}} {{dep.gf180mcu-kianv-rv32ima-sv32}} {{dep.to2610-router}} {{dep.to2610-gpu}}
+    timeout: 18000
   linux-gpu:
     desc: 从同一个断点起，SPI1 上接一整颗 to2610-gpu：经 spidev 重放收发、经内核驱动跑渲染与推理
     run: env LAYERS=gpu bash htest/linux-layers.sh {{out}} {{dep.gf180mcu-kianv-rv32ima-sv32}} {{dep.to2610-router}} {{dep.to2610-gpu}}

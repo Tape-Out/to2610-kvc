@@ -4,7 +4,7 @@ A single-core chip that boots Linux, for the ECOS 2610 shuttle: Hirosh Dabui's K
 
 ![maturity](https://img.shields.io/badge/maturity-simulated-yellow) ![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0%20OR%20MulanPSL--2.0-blue)
 
-The chip is [`gf180mcu-kianv-rv32ima-sv32`](https://github.com/Tape-Out/gf180mcu-kianv-rv32ima-sv32), the SoC upstream taped out on GF180MCU with the one-line patch that repository carries, taken whole and wrapped by [`xirang`](https://github.com/Tape-Out/xirang) into the five-port top of MPC-Frame. There is no RTL of its own; the software under `sw/` is.
+The chip is [`gf180mcu-kianv-rv32ima-sv32`](https://github.com/Tape-Out/gf180mcu-kianv-rv32ima-sv32), the SoC upstream taped out on GF180MCU with the fourteen patches that repository carries, taken whole and wrapped by [`xirang`](https://github.com/Tape-Out/xirang) into the five-port top of MPC-Frame. There is no RTL of its own; the software under `sw/` is.
 
 The functions, the memory map, the board wiring down to the part numbers, the chip tests and the limits are in [`docs/流片说明.md`](docs/流片说明.md); the tape-out report is generated from that file.
 
@@ -28,7 +28,17 @@ $ ran asic to2610-kvc                   # to2610_kvc.v, ecc at 50 MHz, report.js
 $ ran asic to2610-kvc --no-run          # only the Verilog file and ecc.toml
 ```
 
-The chip tests run on Verilator with pin-level models of the SDRAM, the flash and the UART: a bare-metal memory check, the boot loader with an echo payload, and Linux up to a shell.
+The chip tests run on Verilator with pin-level models of the SDRAM, the flash and the UART.
+
+| Test | What |
+|:--:|:--:|
+| `hello`, `periph`, `boot` | a bare-metal memory check, every on-chip peripheral, the boot loader with an echo payload |
+| `isa`, `arch-test` | riscv-tests, 79 programs, and riscv-arch-test, 71 programs |
+| `rtos` | FreeRTOS: three tasks, a queue, a mutex, the tick and preemption |
+| `image`, `linux` | the image boots in QEMU, then from flash on this chip to a shell and runs a set of commands |
+| `sdcard`, `network`, `netjoin`, `netinet` | from the checkpoint at the shell: an SD card, a W5500 on the network, through `to2610-switch` and `to2610-router`, and TCP against a host |
+| `apps` | `apptest`: fork, pipes, signals, shared mappings, threads with a mutex and atomics, files, floating point, clocks, sockets, exec |
+| `gpujoin`, `gpudrv` | a whole `to2610-gpu` on the SPI port, through spidev and through its kernel driver |
 
 ## License
 
